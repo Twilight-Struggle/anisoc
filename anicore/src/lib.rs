@@ -1,39 +1,17 @@
 const HEIGHT: usize = 5;
 const WIDTH: usize = 3;
 const SARU_KICK: [[isize; 2]; 6] = [[1, 1], [1, -1], [-1, 0], [2, 2], [2, -2], [-2, 0]];
-const USAGI_KICK: [[isize; 2]; 10] = [
-    [1, 0],
-    [2, 0],
-    [0, 1],
-    [0, 2],
-    [0, -1],
-    [0, -2],
-    [1, 1],
-    [2, 2],
-    [1, -1],
-    [2, -2],
-];
-const RISU_KICK: [[isize; 2]; 8] = [
-    [1, 0],
-    [2, 0],
-    [-1, 0],
-    [-2, 0],
-    [0, 1],
-    [0, 2],
-    [0, -1],
-    [0, -2],
-];
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum PieceKind {
-    Saru(Vec<isize>, Vec<Vec<isize>>),
-    Usagi(Vec<isize>, Vec<Vec<isize>>),
-    Risu(Vec<isize>, Vec<Vec<isize>>),
-    Oyasaru(Vec<isize>, Vec<Vec<isize>>),
+    Saru([isize; 2], Vec<[isize; 2]>),
+    Usagi([isize; 2], Vec<[isize; 2]>),
+    Risu([isize; 2], Vec<[isize; 2]>),
+    Oyasaru([isize; 2], Vec<[isize; 2]>),
     Ball,
 }
 impl PieceKind {
-    fn get(&self) -> Option<(&Vec<isize>, &Vec<Vec<isize>>)> {
+    fn get(&self) -> Option<(&[isize; 2], &Vec<[isize; 2]>)> {
         match self {
             PieceKind::Saru(idou, kick) => Some((idou, kick)),
             PieceKind::Usagi(idou, kick) => Some((idou, kick)),
@@ -57,15 +35,15 @@ struct Piece {
     piecekind: PieceKind,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 struct Act {
-    from: isize,
-    to: isize,
-    kickto: Option<isize>,
+    from: (isize, isize),
+    to: (isize, isize),
+    kickto: Option<(isize, isize)>,
 }
 
-// type Board = Vec<Vec<Option<Piece>>>;
-type Board = [[Option<Piece>; WIDTH]; HEIGHT];
+type Board = Vec<Vec<Option<Piece>>>;
+// type Board = Box<[[Option<Piece>; WIDTH]; HEIGHT]>;
 pub struct Game {
     turn: Player,
     board: Board,
@@ -73,19 +51,60 @@ pub struct Game {
 
 impl Game {
     pub fn new() -> Self {
-        let mut board: Board = [[None; WIDTH]; HEIGHT];
-        let saru_kick = vec![
-            vec![1, 1],
-            vec![1, -1],
-            vec![-1, 0],
-            vec![2, 2],
-            vec![2, -2],
-            vec![-2, 0],
+        let mut board = vec![vec![None; 3]; 5];
+        let saru_kick = SARU_KICK.iter().copied().collect();
+        let saru_piece = PieceKind::Saru([-1, 1], saru_kick);
+        let usagi_kick = vec![
+            [1, 0],
+            [2, 0],
+            [0, 1],
+            [0, 2],
+            [0, -1],
+            [0, -2],
+            [1, 1],
+            [2, 2],
+            [1, -1],
+            [2, -2],
         ];
-        let saru_piece = PieceKind::Saru(vec![-1, 1], saru_kick);
+        let usagi_piece = PieceKind::Usagi([-1, 1], usagi_kick);
+        let risu_kick = vec![
+            [1, 0],
+            [2, 0],
+            [-1, 0],
+            [-2, 0],
+            [0, 1],
+            [0, 2],
+            [0, -1],
+            [0, -2],
+        ];
+        let risu_piece = PieceKind::Risu([-1, 1], risu_kick);
         board[1][1] = Some(Piece {
             player: Player::Attack,
+            piecekind: saru_piece.clone(),
+        });
+        board[0][0] = Some(Piece {
+            player: Player::Attack,
+            piecekind: usagi_piece.clone(),
+        });
+        board[0][2] = Some(Piece {
+            player: Player::Attack,
+            piecekind: risu_piece.clone(),
+        });
+        board[3][1] = Some(Piece {
+            player: Player::Defence,
             piecekind: saru_piece,
+        });
+        board[4][0] = Some(Piece {
+            player: Player::Defence,
+            piecekind: risu_piece,
+        });
+        board[4][2] = Some(Piece {
+            player: Player::Defence,
+            piecekind: usagi_piece,
+        });
+        board[2][1] = Some(Piece {
+            player: Player::Neutral,
+            piecekind: PieceKind::Ball,
         });
         Game {
             turn: Player::Attack,
@@ -96,8 +115,9 @@ impl Game {
         match self.turn {
             Player::Attack => self.turn = Player::Defence,
             Player::Defence => self.turn = Player::Attack,
+            _ => (),
         };
-        for row in self.board {
+        for row in &mut self.board {
             row.reverse();
         }
         self.board.reverse();
@@ -107,35 +127,96 @@ impl Game {
         hei: isize,
         wid: isize,
         piece: &Piece,
-    ) -> (Option<Vec<(isize, isize)>>, Option<(isize, isize)>) {
-        let mut legal: Vec<(isize, isize)> = vec![];
-        let mut ball_legal: Option<(isize, isize)> = None;
-        let (idou, kick) = piece.piecekind.get().unwrap();
+    ) -> (Option<Vec<Act>>, Option<Act>) {
+        let mut move_legal: Vec<Act> = vec![];
+        let mut ball_legal: Option<Act> = None;
+        let (idou, _) = piece.piecekind.get().unwrap();
         for x in hei + idou[0]..=hei + idou[1] {
             for y in wid + idou[0]..=wid + idou[1] {
-                if (0 <= x && x <= (HEIGHT as isize - 1)) && (0 <= y && y <= WIDTH as isize) {
-                    match self.board[x as usize][y as usize] {
-                        None => legal.push((x, y)),
+                if (0 <= x && x < HEIGHT as isize) && (0 <= y && y < WIDTH as isize) {
+                    match &self.board[x as usize][y as usize] {
+                        None => move_legal.push(Act {
+                            from: (hei, wid),
+                            to: (x, y),
+                            kickto: None,
+                        }),
                         Some(ball) if ball.piecekind == PieceKind::Ball => {
-                            ball_legal = Some((x, y))
+                            ball_legal = Some(Act {
+                                from: (hei, wid),
+                                to: (x, y),
+                                kickto: None,
+                            })
                         }
+                        _ => (),
                     }
                 }
             }
         }
-        if legal.len() == 0 {
+        if move_legal.len() == 0 {
             (None, ball_legal)
         } else {
-            (Some(legal), ball_legal)
+            (Some(move_legal), ball_legal)
         }
     }
-    fn piece_legal_move(&self, hei: isize, wid: isize, piece: &Piece) -> Vec<Act> {}
+    fn piece_can_kick(
+        &self,
+        ball_legal: &Act,
+        kicked_mask: Vec<(isize, isize)>,
+        piece: &Piece,
+    ) -> Vec<Act> {
+        let (_, kickto) = piece.piecekind.get().unwrap();
+        let mut kicks_legal: Vec<Act> = vec![];
+        for kick in kickto {
+            let (x, y) = (ball_legal.to.0 + kick[0], ball_legal.to.1 + kick[1]);
+            if (-1 <= x && x <= HEIGHT as isize) && (0 <= y && y <= WIDTH as isize) {
+                if (x == -1 || x == 5) || ((x, y) == ball_legal.from) {
+                    kicks_legal.push(Act {
+                        from: ball_legal.from,
+                        to: ball_legal.to,
+                        kickto: Some((x, y)),
+                    });
+                } else if !kicked_mask.iter().any(|&kicked| kicked == (x, y)) {
+                    match &self.board[x as usize][y as usize] {
+                        Some(found_piece) if found_piece.player == self.turn => {
+                            let mut kicked_mask_chi = kicked_mask.clone();
+                            kicked_mask_chi.push((x, y));
+                            kicks_legal.append(&mut self.piece_can_kick(
+                                ball_legal,
+                                kicked_mask_chi,
+                                found_piece,
+                            ));
+                        }
+                        None => kicks_legal.push(Act {
+                            from: ball_legal.from,
+                            to: ball_legal.to,
+                            kickto: Some((x, y)),
+                        }),
+                        _ => (),
+                    }
+                }
+            }
+        }
+        kicks_legal
+    }
+    fn piece_legal_move(&self, hei: isize, wid: isize, piece: &Piece) -> Vec<Act> {
+        let (move_legal, ball_legal) = self.piece_can_move(hei, wid, piece);
+        let mut legal = match move_legal {
+            Some(moves) => moves,
+            None => vec![],
+        };
+        if let Some(ball_legal) = ball_legal {
+            legal.append(&mut self.piece_can_kick(&ball_legal, vec![ball_legal.to], piece))
+        }
+        legal
+    }
     fn legal_moves(&self) -> Vec<Act> {
         let mut ret: Vec<Act> = vec![];
         for (hei, row) in self.board.iter().enumerate() {
             for (wid, col) in row.iter().enumerate() {
                 match col {
-                    Some(piece) => (),
+                    Some(piece) => {
+                        ret.append(&mut self.piece_legal_move(hei as isize, wid as isize, piece))
+                    }
                     None => (),
                 }
             }
@@ -156,12 +237,38 @@ impl Game {
         // 成功をreturn
     }
 }
+impl Default for Game {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     #[test]
-    fn it_works() {
-        let result = 2 + 2;
-        assert_eq!(result, 4);
+    fn piece_can_move_works() {
+        let game = Game::new();
+        let input = vec![(1, 1, game.board[1][1].as_ref().unwrap())];
+        let move_legal_seed = vec![(2, 0), (2, 2), (1, 0), (1, 2), (0, 1)];
+        let mut move_legal_unwrap: Vec<Act> = vec![];
+        for moves in move_legal_seed {
+            move_legal_unwrap.push(Act {
+                from: (1, 1),
+                to: moves,
+                kickto: None,
+            })
+        }
+        let ball_legal_unwrap = Act {
+            from: (1, 1),
+            to: (2, 1),
+            kickto: None,
+        };
+        let output = vec![(move_legal_unwrap, ball_legal_unwrap)];
+        for (inp, mut ref_out) in input.into_iter().zip(output.into_iter()) {
+            let (move_legal, ball_legal) = game.piece_can_move(inp.0, inp.1, inp.2);
+            assert_eq!(ref_out.0.sort(), move_legal.unwrap().sort());
+            assert_eq!(ref_out.1, ball_legal.unwrap());
+        }
     }
 }
