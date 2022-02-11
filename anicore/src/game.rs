@@ -138,7 +138,7 @@ impl Game {
         let (idou, _) = piece.piecekind.get().unwrap();
         for x in hei + idou[0]..=hei + idou[1] {
             for y in wid + idou[0]..=wid + idou[1] {
-                if (0..=HEIGHT).contains(&x) && (0..=WIDTH).contains(&y) {
+                if (0..HEIGHT).contains(&x) && (0..WIDTH).contains(&y) {
                     match &self.board[x as usize][y as usize] {
                         None => move_legal.push(Act {
                             from: (hei, wid),
@@ -173,7 +173,7 @@ impl Game {
         let mut kicks_legal: Vec<Act> = vec![];
         for kick in kickto {
             let (x, y) = (ball_legal.to.0 + kick[0], ball_legal.to.1 + kick[1]);
-            if (-1 <= x && x <= HEIGHT) && (0..=WIDTH).contains(&y) {
+            if (-1 <= x && x <= HEIGHT) && (0..WIDTH).contains(&y) {
                 if (x == -1 || x == 5) || ((x, y) == ball_legal.from) {
                     kicks_legal.push(Act {
                         from: ball_legal.from,
@@ -214,15 +214,19 @@ impl Game {
         }
         legal
     }
-    fn legal_moves(&self) -> Vec<Act> {
+    pub fn legal_moves(&self) -> Vec<Act> {
         let mut ret: Vec<Act> = vec![];
         for (hei, row) in self.board.iter().enumerate() {
             for (wid, col) in row.iter().enumerate() {
-                match col {
-                    Some(piece) => {
-                        ret.append(&mut self.piece_legal_move(hei as isize, wid as isize, piece))
+                if let Some(piece) = col {
+                    match piece.piecekind {
+                        PieceKind::Ball => (),
+                        _ => ret.append(&mut self.piece_legal_move(
+                            hei as isize,
+                            wid as isize,
+                            piece,
+                        )),
                     }
-                    None => (),
                 }
             }
         }
@@ -248,7 +252,7 @@ impl Game {
                 let last_stop = kick.0;
                 if last_stop == 0 - 1 {
                     return (true, Some(self.turn.against()));
-                } else if last_stop == HEIGHT + 1 {
+                } else if last_stop == HEIGHT {
                     return (true, Some(self.turn));
                 }
                 let mut tmp = None;
