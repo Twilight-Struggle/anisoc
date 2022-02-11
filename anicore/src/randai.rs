@@ -3,6 +3,7 @@ use crate::Act;
 use crate::Agent;
 use rand::Rng;
 
+#[derive(Debug, Clone)]
 pub struct Randai {}
 
 impl Agent for Randai {

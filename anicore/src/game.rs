@@ -49,6 +49,7 @@ struct Piece {
 }
 
 type Board = Vec<Vec<Option<Piece>>>;
+#[derive(Debug, Clone)]
 pub struct Game {
     turn: Player,
     board: Board,
@@ -219,20 +220,15 @@ impl Game {
         for (hei, row) in self.board.iter().enumerate() {
             for (wid, col) in row.iter().enumerate() {
                 if let Some(piece) = col {
-                    match piece.piecekind {
-                        PieceKind::Ball => (),
-                        _ => ret.append(&mut self.piece_legal_move(
-                            hei as isize,
-                            wid as isize,
-                            piece,
-                        )),
+                    if piece.player == self.turn {
+                        ret.append(&mut self.piece_legal_move(hei as isize, wid as isize, piece))
                     }
                 }
             }
         }
         ret
     }
-    // fn reset();
+    // #[tracing::instrument(skip(self))]
     fn action_parse(&mut self, act: Option<Act>) -> (bool, Option<Player>) {
         // パスしかできなかった
         if act == None {
@@ -285,6 +281,7 @@ impl Game {
                 );
             }
         }
+        // tracing::debug!("board: {:?}", self.board);
         // 親猿にグレードアップ
         // turn変更
         if act.to.0 == 4 {
@@ -303,7 +300,8 @@ impl Game {
         // 成功をreturn
         (true, None)
     }
-    pub fn game<T: Agent>(agent1: T, agent2: T) -> String {
+    #[tracing::instrument]
+    pub fn game<T: Agent + std::fmt::Debug>(agent1: T, agent2: T) -> String {
         let mut game_ins = Self::setup();
         let turn = rand::thread_rng().gen_range(0..=1);
         let ((front, back), (frontstr, backstr)) = if turn == 0 {
@@ -316,11 +314,13 @@ impl Game {
             let mut winner: Option<Player>;
             loop {
                 let action: Option<Act>;
+                // tracing::debug!("legal moves: {:?}", game_ins.legal_moves());
                 if game_ins.legal_moves().is_empty() {
                     action = None;
                 } else {
                     action = Some(now_player.1.action(&game_ins));
                 }
+                tracing::debug!("the move is {:?}", action);
                 let (success, winnertmp) = game_ins.action_parse(action);
                 winner = winnertmp;
                 if success {
