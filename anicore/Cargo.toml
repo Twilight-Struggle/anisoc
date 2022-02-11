@@ -7,3 +7,5 @@ edition = "2021"
 
 [dependencies]
 rand = "0.8.4"
+tracing = "0.1.19"
+tracing-subscriber = {version = "0.3", features = ["env-filter"]}
