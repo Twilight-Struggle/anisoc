@@ -21,7 +21,7 @@ mod tests {
         for _ in 0..50 {
             let agent1 = randai::Randai {};
             let agent2 = randai::Randai {};
-            game::Game::game(agent1, agent2);
+            game::Game::random_game(agent1, agent2);
         }
     }
 }

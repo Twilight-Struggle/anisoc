@@ -1,0 +1,17 @@
+[package]
+name = "aniweb"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+actix-web = "3.3.3"
+actix-files = "0.5.0"
+serde = { version = "1.0.56", features = ["derive"] }
+uuid = { version = "0.8", features = ["v4", "serde"] }
+tracing = "0.1.19"
+tracing-subscriber = {version = "0.3", features = ["env-filter"]}
+config = "0.11"
+serde-aux = "3"
+anicore = {path = "../anicore"}

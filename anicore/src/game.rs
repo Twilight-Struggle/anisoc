@@ -301,7 +301,7 @@ impl Game {
         (true, None)
     }
     #[tracing::instrument]
-    pub fn game<T: Agent + std::fmt::Debug>(agent1: T, agent2: T) -> String {
+    pub fn random_game<T: Agent + std::fmt::Debug>(agent1: T, agent2: T) -> String {
         let mut game_ins = Self::setup();
         let turn = rand::thread_rng().gen_range(0..=1);
         let ((front, back), (frontstr, backstr)) = if turn == 0 {
