@@ -11,6 +11,14 @@ pub struct AiGame<T: Agent> {
     game_end: bool,
 }
 
+pub enum Status {
+    GameEnd(String),
+    InvalidAction(String),
+    YouWin(String),
+    Youlose(String),
+    GameContinue(String),
+}
+
 impl<T: Agent> AiGame<T> {
     pub fn setup(ai_agent: T) -> Self {
         let mut game_ins = game::Game::setup();
@@ -28,9 +36,12 @@ impl<T: Agent> AiGame<T> {
             game_end: false,
         }
     }
-    pub fn action(&mut self, action_in: Act) -> (String, Vec<Vec<Option<String>>>) {
+    pub fn board(&self) -> Vec<Vec<Option<String>>> {
+        self.game_ins.board_to_string()
+    }
+    pub fn action(&mut self, action_in: Act) -> (Status, Vec<Vec<Option<String>>>) {
         if self.game_end {
-            return ("Game End".to_string(), vec![vec![]]);
+            return (Status::GameEnd("Game End".to_string()), vec![vec![]]);
         }
         let action: Option<Act>;
         // tracing::debug!("legal moves: {:?}", game_ins.legal_moves());
@@ -42,16 +53,22 @@ impl<T: Agent> AiGame<T> {
         let (success, winner) = self.game_ins.action_parse(action);
         if !success {
             return (
-                "Invalid Action".to_string(),
+                Status::InvalidAction("Invalid Action".to_string()),
                 self.game_ins.board_to_string(),
             );
         }
         if let Some(player) = winner {
             self.game_end = true;
             if player == self.web_turn {
-                return ("You win!".to_string(), self.game_ins.board_to_string());
+                return (
+                    Status::YouWin("You win!".to_string()),
+                    self.game_ins.board_to_string(),
+                );
             } else {
-                return ("You Lose!".to_string(), self.game_ins.board_to_string());
+                return (
+                    Status::Youlose("You Lose!".to_string()),
+                    self.game_ins.board_to_string(),
+                );
             }
         }
         // こっからAI_agent
@@ -66,14 +83,48 @@ impl<T: Agent> AiGame<T> {
             self.game_end = true;
             self.game_ins.next_turn();
             if player == self.web_turn {
-                return ("You win!".to_string(), self.game_ins.board_to_string());
+                return (
+                    Status::YouWin("You win!".to_string()),
+                    self.game_ins.board_to_string(),
+                );
             } else {
-                return ("You lose!".to_string(), self.game_ins.board_to_string());
+                return (
+                    Status::Youlose("You lose!".to_string()),
+                    self.game_ins.board_to_string(),
+                );
             }
         }
         (
-            "Game continues".to_string(),
+            Status::GameContinue("Game continues".to_string()),
             self.game_ins.board_to_string(),
         )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use anicore::randai::Randai;
+    #[test]
+    fn ai_game_works() {
+        for _ in 0..50 {
+            let opponent = Randai {};
+            let mut aigame = AiGame::setup(opponent);
+            let tester = Randai {};
+            loop {
+                let act = tester.action(&aigame.game_ins);
+                let (status, _) = aigame.action(act);
+                match status {
+                    Status::GameEnd(stri)
+                    | Status::InvalidAction(stri)
+                    | Status::YouWin(stri)
+                    | Status::Youlose(stri) => {
+                        println!("{}", stri);
+                        break;
+                    }
+                    Status::GameContinue(stri) => println!("{}", stri),
+                }
+            }
+        }
     }
 }
