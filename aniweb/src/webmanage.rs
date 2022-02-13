@@ -23,11 +23,11 @@ async fn index() -> actix_web::Result<NamedFile> {
     Ok(NamedFile::open("target/public/index.html")?)
 }
 
-#[derive(Debug, Serialize)]
-pub struct MakeResult {
-    pub id: Uuid,
-    pub board: Vec<Vec<Option<String>>>,
-    pub res: String,
+#[derive(Debug, Serialize, Deserialize)]
+struct MakeResult {
+    id: Uuid,
+    board: Vec<Vec<Option<String>>>,
+    res: String,
 }
 
 #[tracing::instrument(
@@ -50,9 +50,9 @@ async fn make(data: web::Data<GameManeger<Randai>>) -> HttpResponse {
     })
 }
 
-#[derive(Debug, Deserialize)]
-pub struct Resetcmd {
-    pub id: Uuid,
+#[derive(Debug, Serialize, Deserialize)]
+struct Resetcmd {
+    id: Uuid,
 }
 #[tracing::instrument(
     skip(data),
@@ -79,10 +79,10 @@ async fn reset(cmd: web::Json<Resetcmd>, data: web::Data<GameManeger<Randai>>) -
     }
 }
 
-#[derive(Debug, Deserialize)]
-pub struct Movcmd {
-    pub id: Uuid,
-    pub act: Act,
+#[derive(Debug, Serialize, Deserialize)]
+struct Movcmd {
+    id: Uuid,
+    act: Act,
 }
 #[tracing::instrument(
     skip(data),
@@ -129,4 +129,194 @@ pub fn run(listener: TcpListener) -> Result<Server, std::io::Error> {
     .listen(listener)?
     .run();
     Ok(server)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use actix_web::{http, http::header, test};
+    use serde_json;
+
+    #[actix_rt::test]
+    async fn test_health_ok() {
+        let resp = health_check().await;
+        assert_eq!(resp.status(), http::StatusCode::OK);
+    }
+
+    #[actix_rt::test]
+    async fn make_works() {
+        let gamemaneger = web::Data::new(GameManeger::<Randai> {
+            games: Mutex::new(HashMap::new()),
+        });
+        let mut app = test::init_service(
+            App::new()
+                .app_data(gamemaneger.clone())
+                .service(make)
+                .service(reset)
+                .service(mov),
+        )
+        .await;
+        let res = test::TestRequest::post()
+            .uri("/make")
+            .send_request(&mut app)
+            .await;
+
+        assert!(res.status().is_success());
+        let result: MakeResult = test::read_body_json(res).await;
+        assert_eq!(result.res, *"made");
+        assert_eq!(result.board.len(), 5);
+        assert_eq!(result.board[0].len(), 3);
+        println!("{:?}", result.board);
+    }
+
+    #[actix_rt::test]
+    async fn reset_works() {
+        let gamemaneger = web::Data::new(GameManeger::<Randai> {
+            games: Mutex::new(HashMap::new()),
+        });
+        let mut app = test::init_service(
+            App::new()
+                .app_data(gamemaneger.clone())
+                .service(make)
+                .service(reset)
+                .service(mov),
+        )
+        .await;
+
+        let res = test::TestRequest::post()
+            .uri("/make")
+            .send_request(&mut app)
+            .await;
+        assert!(res.status().is_success());
+        let result: MakeResult = test::read_body_json(res).await;
+
+        let generated_uuid = result.id;
+        let payload = serde_json::to_string(&Resetcmd { id: generated_uuid }).unwrap();
+        let res = test::TestRequest::post()
+            .uri("/reset")
+            .header(header::CONTENT_TYPE, "application/json")
+            .set_payload(payload)
+            .send_request(&mut app)
+            .await;
+        assert!(res.status().is_success());
+        let result: MakeResult = test::read_body_json(res).await;
+        assert_eq!(result.res, *"reseted");
+        assert_eq!(result.id, generated_uuid);
+        assert_eq!(result.board.len(), 5);
+        assert_eq!(result.board[0].len(), 3);
+        println!("{:?}", result.board);
+    }
+
+    #[actix_rt::test]
+    async fn reset_dont_works() {
+        let gamemaneger = web::Data::new(GameManeger::<Randai> {
+            games: Mutex::new(HashMap::new()),
+        });
+        let mut app = test::init_service(
+            App::new()
+                .app_data(gamemaneger.clone())
+                .service(make)
+                .service(reset)
+                .service(mov),
+        )
+        .await;
+
+        let payload = serde_json::to_string(&Resetcmd { id: Uuid::new_v4() }).unwrap();
+        let res = test::TestRequest::post()
+            .uri("/reset")
+            .header(header::CONTENT_TYPE, "application/json")
+            .set_payload(payload)
+            .send_request(&mut app)
+            .await;
+        assert!(!res.status().is_success());
+    }
+
+    // テストのためにpubにしないよう上書き
+    #[derive(Debug, Serialize, Deserialize)]
+    struct Act {
+        from: (isize, isize),
+        to: (isize, isize),
+        kickto: Option<(isize, isize)>,
+    }
+    #[derive(Debug, Serialize, Deserialize)]
+    struct Movcmd {
+        id: Uuid,
+        act: Act,
+    }
+    #[actix_rt::test]
+    async fn mov_works() {
+        let gamemaneger = web::Data::new(GameManeger::<Randai> {
+            games: Mutex::new(HashMap::new()),
+        });
+        let mut app = test::init_service(
+            App::new()
+                .app_data(gamemaneger.clone())
+                .service(make)
+                .service(reset)
+                .service(mov),
+        )
+        .await;
+
+        let res = test::TestRequest::post()
+            .uri("/make")
+            .send_request(&mut app)
+            .await;
+        assert!(res.status().is_success());
+        let result: MakeResult = test::read_body_json(res).await;
+
+        let generated_uuid = result.id;
+        let payload = serde_json::to_string(&Movcmd {
+            id: generated_uuid,
+            act: Act {
+                from: (0, 0),
+                to: (1, 1),
+                kickto: None,
+            },
+        })
+        .unwrap();
+        let res = test::TestRequest::post()
+            .uri("/mov")
+            .header(header::CONTENT_TYPE, "application/json")
+            .set_payload(payload)
+            .send_request(&mut app)
+            .await;
+        assert!(res.status().is_success());
+        let result: MakeResult = test::read_body_json(res).await;
+        assert_eq!(result.id, generated_uuid);
+        assert_eq!(result.board.len(), 5);
+        assert_eq!(result.board[0].len(), 3);
+        println!("{:?}", result.board);
+    }
+
+    #[actix_rt::test]
+    async fn mov_dont_works() {
+        let gamemaneger = web::Data::new(GameManeger::<Randai> {
+            games: Mutex::new(HashMap::new()),
+        });
+        let mut app = test::init_service(
+            App::new()
+                .app_data(gamemaneger.clone())
+                .service(make)
+                .service(reset)
+                .service(mov),
+        )
+        .await;
+
+        let payload = serde_json::to_string(&Movcmd {
+            id: Uuid::new_v4(),
+            act: Act {
+                from: (0, 0),
+                to: (1, 1),
+                kickto: None,
+            },
+        })
+        .unwrap();
+        let res = test::TestRequest::post()
+            .uri("/mov")
+            .header(header::CONTENT_TYPE, "application/json")
+            .set_payload(payload)
+            .send_request(&mut app)
+            .await;
+        assert!(!res.status().is_success());
+    }
 }

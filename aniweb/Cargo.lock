@@ -328,12 +328,14 @@ name = "aniweb"
 version = "0.1.0"
 dependencies = [
  "actix-files",
+ "actix-rt",
  "actix-web",
  "anicore",
  "config",
  "rand 0.8.4",
  "serde 1.0.136",
  "serde-aux",
+ "serde_json",
  "tracing",
  "tracing-subscriber",
  "uuid",
