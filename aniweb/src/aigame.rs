@@ -77,3 +77,25 @@ impl<T: Agent> AiGame<T> {
         )
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use anicore::randai::Randai;
+    #[test]
+    fn ai_game_works() {
+        for _ in 0..50 {
+            let opponent = Randai {};
+            let mut aigame = AiGame::setup(opponent);
+            let tester = Randai {};
+            loop {
+                let act = tester.action(&aigame.game_ins);
+                let (status, _) = aigame.action(act);
+                println!("{}", status);
+                if status != *"Game continues" {
+                    break;
+                }
+            }
+        }
+    }
+}
