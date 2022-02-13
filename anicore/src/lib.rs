@@ -1,7 +1,7 @@
 pub mod game;
 pub mod randai;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, serde::Deserialize)]
 pub struct Act {
     from: (isize, isize),
     to: (isize, isize),

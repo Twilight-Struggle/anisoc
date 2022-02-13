@@ -6,6 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+serde = { version = "1.0.56", features = ["derive"] }
 rand = "0.8.4"
 tracing = "0.1.19"
 tracing-subscriber = {version = "0.3", features = ["env-filter"]}
