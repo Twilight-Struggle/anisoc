@@ -1,9 +1,5 @@
-#![allow(clippy::needless_range_loop)]
-
 pub mod game;
 pub mod randai;
-
-use rand::Rng;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Act {

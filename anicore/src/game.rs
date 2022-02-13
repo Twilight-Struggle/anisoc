@@ -117,6 +117,7 @@ impl Game {
             board,
         }
     }
+    #[allow(clippy::needless_range_loop)]
     pub fn board_to_string(&self) -> Vec<Vec<Option<String>>> {
         let mut ret = vec![vec![None; WIDTH as usize]; HEIGHT as usize];
         for i in 0..HEIGHT as usize {
