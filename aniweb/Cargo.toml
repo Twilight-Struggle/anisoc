@@ -5,6 +5,13 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+path = "src/main.rs"
+name = "aniweb_main"
+
 [dependencies]
 rand = "0.8.4"
 actix-web = "3.3.3"
@@ -20,3 +27,5 @@ anicore = {path = "../anicore"}
 [dev-dependencies]
 actix-rt = "1.1.1"
 serde_json = "1.0"
+reqwest = { version = "0.10.10", features = ["json"] }
+tokio = "0.2.6"
