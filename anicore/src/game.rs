@@ -27,7 +27,7 @@ impl PieceKind {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum Player {
+pub enum Player {
     Attack,
     Defence,
     Neutral,
@@ -57,7 +57,7 @@ pub struct Game {
 
 impl Game {
     pub fn setup() -> Self {
-        let mut board = vec![vec![None; 3]; 5];
+        let mut board = vec![vec![None; WIDTH as usize]; HEIGHT as usize];
         let saru_kick = SARU_KICK.iter().copied().collect();
         let saru_piece = PieceKind::Saru([-1, 1], saru_kick);
         let usagi_kick = vec![
@@ -117,7 +117,33 @@ impl Game {
             board,
         }
     }
-    fn next_turn(&mut self) {
+    #[allow(clippy::needless_range_loop)]
+    pub fn board_to_string(&self) -> Vec<Vec<Option<String>>> {
+        let mut ret = vec![vec![None; WIDTH as usize]; HEIGHT as usize];
+        for i in 0..HEIGHT as usize {
+            for j in 0..WIDTH as usize {
+                match &self.board[i][j] {
+                    Some(piece) if piece.player == self.turn => match piece.piecekind {
+                        PieceKind::Oyasaru(_, _) => ret[i][j] = Some("O_A".to_string()),
+                        PieceKind::Saru(_, _) => ret[i][j] = Some("S_A".to_string()),
+                        PieceKind::Risu(_, _) => ret[i][j] = Some("R_A".to_string()),
+                        PieceKind::Usagi(_, _) => ret[i][j] = Some("U_A".to_string()),
+                        _ => (),
+                    },
+                    Some(piece) => match piece.piecekind {
+                        PieceKind::Ball => ret[i][j] = Some("B_N".to_string()),
+                        PieceKind::Oyasaru(_, _) => ret[i][j] = Some("O_D".to_string()),
+                        PieceKind::Saru(_, _) => ret[i][j] = Some("S_D".to_string()),
+                        PieceKind::Risu(_, _) => ret[i][j] = Some("R_D".to_string()),
+                        PieceKind::Usagi(_, _) => ret[i][j] = Some("U_D".to_string()),
+                    },
+                    None => (),
+                }
+            }
+        }
+        ret
+    }
+    pub fn next_turn(&mut self) {
         match self.turn {
             Player::Attack => self.turn = Player::Defence,
             Player::Defence => self.turn = Player::Attack,
@@ -229,7 +255,7 @@ impl Game {
         ret
     }
     // #[tracing::instrument(skip(self))]
-    fn action_parse(&mut self, act: Option<Act>) -> (bool, Option<Player>) {
+    pub fn action_parse(&mut self, act: Option<Act>) -> (bool, Option<Player>) {
         // パスしかできなかった
         if act == None {
             self.next_turn();
@@ -284,7 +310,7 @@ impl Game {
         // tracing::debug!("board: {:?}", self.board);
         // 親猿にグレードアップ
         // turn変更
-        if act.to.0 == 4 {
+        if act.to.0 == HEIGHT - 1 {
             if let PieceKind::Oyasaru(_, _) = self.board[act.to.0 as usize][act.to.1 as usize]
                 .as_ref()
                 .unwrap()
@@ -301,7 +327,7 @@ impl Game {
         (true, None)
     }
     #[tracing::instrument]
-    pub fn game<T: Agent + std::fmt::Debug>(agent1: T, agent2: T) -> String {
+    pub fn agent_game<T: Agent + std::fmt::Debug>(agent1: T, agent2: T) -> String {
         let mut game_ins = Self::setup();
         let turn = rand::thread_rng().gen_range(0..=1);
         let ((front, back), (frontstr, backstr)) = if turn == 0 {
@@ -382,5 +408,34 @@ mod tests {
             assert_eq!(ref_out.0.sort(), move_legal.unwrap().sort());
             assert_eq!(ref_out.1, ball_legal.unwrap());
         }
+    }
+    use crate::randai;
+    #[test]
+    fn random_battle() {
+        for _ in 0..50 {
+            let agent1 = randai::Randai {};
+            let agent2 = randai::Randai {};
+            Game::agent_game(agent1, agent2);
+        }
+    }
+    use tracing_subscriber::fmt::format::FmtSpan;
+    use tracing_subscriber::EnvFilter;
+    fn init_subscriber() {
+        let env_filter =
+            EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("Debug"));
+        let format = tracing_subscriber::fmt::format().pretty();
+        tracing_subscriber::fmt()
+            .with_writer(std::io::stdout)
+            .with_env_filter(env_filter)
+            .with_span_events(FmtSpan::NEW | FmtSpan::CLOSE)
+            .event_format(format)
+            .init();
+    }
+    #[test]
+    fn integ_test() {
+        init_subscriber();
+        let agent1 = randai::Randai {};
+        let agent2 = randai::Randai {};
+        Game::agent_game(agent1, agent2);
     }
 }
