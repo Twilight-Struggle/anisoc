@@ -1,3 +1,4 @@
+pub mod aigame;
 pub mod configuration;
 pub mod telemetry;
 pub mod webmanage;

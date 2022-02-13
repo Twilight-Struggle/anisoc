@@ -330,6 +330,7 @@ dependencies = [
  "actix-web",
  "anicore",
  "config",
+ "rand 0.8.4",
  "serde 1.0.136",
  "serde-aux",
  "tracing",
