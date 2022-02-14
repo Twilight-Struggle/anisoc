@@ -8,7 +8,7 @@ fn spawn_app() -> String {
     let server = run(listener).expect("Failed to bind address");
     let _ = tokio::spawn(server);
     // We return the application address to the caller!
-    format!("http://127.0.0.1:{}", port)
+    format!("http://localhost:{}", port)
 }
 
 #[actix_rt::test]
