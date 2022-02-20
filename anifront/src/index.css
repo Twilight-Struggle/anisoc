@@ -29,13 +29,13 @@ ul {
   float: left;
   font-size: 24px;
   font-weight: bold;
-  line-height: 34px;
-  height: 34px;
+  line-height: 0px;
+  height: 100px;
   margin-right: -1px;
   margin-top: -1px;
   padding: 0;
   text-align: center;
-  width: 34px;
+  width: 100px;
 }
 
 .square-piece {
@@ -61,11 +61,11 @@ ul {
   background: #ddd;
 }
 
-.game {
+.app {
   display: flex;
   flex-direction: column;
 }
 
-.game-info {
+.info {
   margin-top: 20px;
 }
