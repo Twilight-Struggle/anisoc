@@ -96,7 +96,7 @@ function App() {
         <button onClick={handleMovePush}>移動実行</button>
         <button onClick={handleMoveCancel}>移動キャンセル</button>
         <label>{status} </label>
-        <label>
+        <label aria-label="moves">
           {moves[0] && "("}
           {moves[0] && moves[0][0]}
           {moves[0] && ","}
