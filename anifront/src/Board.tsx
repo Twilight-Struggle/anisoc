@@ -12,17 +12,24 @@ import ball_img from "./images/ball.png";
 type PropsSquare = {
   onClick: () => void;
   image: string | null;
+  id: string;
 };
 function Square(props: PropsSquare) {
   // onClickでmove_listに自身のkeyを追加
   if (props.image != null) {
     return (
-      <button onClick={props.onClick} className="square">
-        <img src={props.image} alt="" />
+      <button onClick={props.onClick} className="square" data-testid={props.id}>
+        <img src={props.image} alt="" data-testid={props.id + "_img"} />
       </button>
     );
   } else {
-    return <button onClick={props.onClick} className="square"></button>;
+    return (
+      <button
+        onClick={props.onClick}
+        className="square"
+        data-testid={props.id}
+      ></button>
+    );
   }
 }
 
@@ -66,7 +73,11 @@ function Board(props: PropsBoard) {
         image_path = null;
     }
     return (
-      <Square onClick={() => props.handleMoveInput(index)} image={image_path} />
+      <Square
+        onClick={() => props.handleMoveInput(index)}
+        image={image_path}
+        id={`board${i}`}
+      />
     );
   };
   return (
