@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import zibun_saru from "./images/zibun_saru.png";
 import zibun_oyasaru from "./images/zibun_oyasaru.png";
 import zibun_risu from "./images/zibun_risu.png";
