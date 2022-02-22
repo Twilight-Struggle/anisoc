@@ -42,3 +42,17 @@ python 側は np.empty((9, 5, 3), dtype=np.float32)という numpy 配列を受�
 from x (16 x 18) + to x 18 + kick_to がその手を int で表している。
 
 ## core
+
+## 実行方法
+
+ビルドは次のコマンドで実行可能
+
+```sh
+$ docker build --tag anisoc --file Dockerfile .
+```
+
+起動は以下の通り。
+
+```sh
+$ docker run　--name anisoc_ins -p 8000:8000 anisoc
+```
