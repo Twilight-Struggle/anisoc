@@ -193,13 +193,17 @@ impl Game {
     fn piece_can_kick(
         &self,
         ball_legal: &Act,
+        ball_place_kick_from: (isize, isize),
         kicked_mask: Vec<(isize, isize)>,
         piece: &Piece,
     ) -> Vec<Act> {
         let (_, kickto) = piece.piecekind.get().unwrap();
         let mut kicks_legal: Vec<Act> = vec![];
         for kick in kickto {
-            let (x, y) = (ball_legal.to.0 + kick[0], ball_legal.to.1 + kick[1]);
+            let (x, y) = (
+                ball_place_kick_from.0 + kick[0],
+                ball_place_kick_from.1 + kick[1],
+            );
             if (-1 <= x && x <= HEIGHT) && (0..WIDTH).contains(&y) {
                 if (x == -1 || x == 5) || ((x, y) == ball_legal.from) {
                     kicks_legal.push(Act {
@@ -214,6 +218,7 @@ impl Game {
                             kicked_mask_chi.push((x, y));
                             kicks_legal.append(&mut self.piece_can_kick(
                                 ball_legal,
+                                (x, y),
                                 kicked_mask_chi,
                                 found_piece,
                             ));
@@ -237,7 +242,12 @@ impl Game {
             None => vec![],
         };
         if let Some(ball_legal) = ball_legal {
-            legal.append(&mut self.piece_can_kick(&ball_legal, vec![ball_legal.to], piece))
+            legal.append(&mut self.piece_can_kick(
+                &ball_legal,
+                ball_legal.to,
+                vec![ball_legal.to],
+                piece,
+            ))
         }
         legal
     }
