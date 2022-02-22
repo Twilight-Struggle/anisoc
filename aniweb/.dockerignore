@@ -1,0 +1,5 @@
+.vscode/
+target/
+tests/
+README.md
+.gitignore
