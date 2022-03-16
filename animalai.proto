@@ -1,0 +1,16 @@
+syntax = "proto3";
+package animalai;
+
+service AiPlayer {
+  // Sends a greeting
+  rpc ThinkAction (BoardReq) returns (ActionRep) {}
+}
+
+message BoardReq {
+  repeated float cells = 1;
+  repeated uint64 legal_moves = 2;
+}
+
+message ActionRep {
+  uint64 action = 1;
+}
