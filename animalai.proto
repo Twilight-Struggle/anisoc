@@ -2,7 +2,6 @@ syntax = "proto3";
 package animalai;
 
 service AiPlayer {
-  // Sends a greeting
   rpc ThinkAction (BoardReq) returns (ActionRep) {}
 }
 
