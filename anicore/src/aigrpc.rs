@@ -1,9 +1,6 @@
 use crate::game::Game;
 use crate::Act;
 use crate::Agent;
-use rand::Rng;
-
-use tonic::{transport::Server, Request, Response, Status};
 
 use animalai::ai_player_client::AiPlayerClient;
 use animalai::BoardReq;
@@ -98,9 +95,12 @@ impl Agent for AIgRPC {
         let cells = into_1darray(game.board_to_tensor());
         let legal_moves = num_legalmoves_from_act(&legalmoves);
 
-        let mut client = AiPlayerClient::connect("http://[::1]:50051").await?;
-        let request = tonic::Request::new(BoardReq { cells, legal_moves });
-        let response = client.think_action(request).await?;
+        let rt = tokio::runtime::Runtime::new().unwrap();
+        let response = rt.block_on(async move {
+            let mut client = AiPlayerClient::connect("http://[::1]:50051").await.unwrap();
+            let request = tonic::Request::new(BoardReq { cells, legal_moves });
+            client.think_action(request).await.unwrap()
+        });
 
         let action_num = response.into_inner().action;
         act_from_num(action_num, &legalmoves)
