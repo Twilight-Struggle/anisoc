@@ -58,7 +58,7 @@ pub struct Game {
 impl Game {
     pub fn setup() -> Self {
         let mut board = vec![vec![None; WIDTH as usize]; HEIGHT as usize];
-        let saru_kick = SARU_KICK.iter().copied().collect();
+        let saru_kick = SARU_KICK.to_vec();
         let saru_piece = PieceKind::Saru([-1, 1], saru_kick);
         let usagi_kick = vec![
             [1, 0],
@@ -354,7 +354,7 @@ impl Game {
             {
                 self.board[act.to.0 as usize][act.to.1 as usize] = Some(Piece {
                     player: self.turn,
-                    piecekind: PieceKind::Oyasaru([-2, 2], SARU_KICK.iter().copied().collect()),
+                    piecekind: PieceKind::Oyasaru([-2, 2], SARU_KICK.to_vec()),
                 });
             }
         }
@@ -375,13 +375,12 @@ impl Game {
         loop {
             let mut winner: Option<Player>;
             loop {
-                let action: Option<Act>;
                 // tracing::debug!("legal moves: {:?}", game_ins.legal_moves());
-                if game_ins.legal_moves().is_empty() {
-                    action = None;
+                let action = if game_ins.legal_moves().is_empty() {
+                    None
                 } else {
-                    action = Some(now_player.1.action(&game_ins));
-                }
+                    Some(now_player.1.action(&game_ins))
+                };
                 tracing::debug!("the move is {:?}", action);
                 let (success, winnertmp) = game_ins.action_parse(action);
                 winner = winnertmp;
