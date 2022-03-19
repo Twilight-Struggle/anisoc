@@ -143,6 +143,32 @@ impl Game {
         }
         ret
     }
+    #[allow(clippy::needless_range_loop)]
+    pub fn board_to_tensor(&self) -> Vec<Vec<Vec<f32>>> {
+        let mut ret = vec![vec![vec![0.0; WIDTH as usize]; HEIGHT as usize]; 9];
+        for i in 0..HEIGHT as usize {
+            for j in 0..WIDTH as usize {
+                match &self.board[i][j] {
+                    Some(piece) if piece.player == self.turn => match piece.piecekind {
+                        PieceKind::Oyasaru(_, _) => ret[3][i][j] = 1.0,
+                        PieceKind::Saru(_, _) => ret[0][i][j] = 1.0,
+                        PieceKind::Risu(_, _) => ret[1][i][j] = 1.0,
+                        PieceKind::Usagi(_, _) => ret[2][i][j] = 1.0,
+                        _ => (),
+                    },
+                    Some(piece) => match piece.piecekind {
+                        PieceKind::Ball => ret[8][i][j] = 1.0,
+                        PieceKind::Oyasaru(_, _) => ret[7][i][j] = 1.0,
+                        PieceKind::Saru(_, _) => ret[4][i][j] = 1.0,
+                        PieceKind::Risu(_, _) => ret[5][i][j] = 1.0,
+                        PieceKind::Usagi(_, _) => ret[6][i][j] = 1.0,
+                    },
+                    None => (),
+                }
+            }
+        }
+        ret
+    }
     pub fn next_turn(&mut self) {
         match self.turn {
             Player::Attack => self.turn = Player::Defence,

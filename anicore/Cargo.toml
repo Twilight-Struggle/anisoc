@@ -10,3 +10,9 @@ serde = { version = "1.0.56", features = ["derive"] }
 rand = "0.8.4"
 tracing = "0.1.19"
 tracing-subscriber = {version = "0.3", features = ["env-filter"]}
+tokio = { version = "1", features = ["rt", "rt-multi-thread"] }
+tonic = "0.6"
+prost = "0.9"
+
+[build-dependencies]
+tonic-build = "0.6"

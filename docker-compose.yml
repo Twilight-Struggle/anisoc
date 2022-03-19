@@ -1,0 +1,18 @@
+version: '3'
+services:
+  anisoc:
+    build: ./
+    image: anisoc
+    container_name: anisoc_ins
+    restart: always
+    ports:
+      - 8000:8000
+  
+  anipy:
+    build: ./anipy
+    image: anipy
+    container_name: anipy_ins
+    # tty: true
+    restart: always
+    volumes:
+      - ./anipy/model:/workspace/model

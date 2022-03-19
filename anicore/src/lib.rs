@@ -1,3 +1,4 @@
+pub mod aigrpc;
 pub mod game;
 pub mod randai;
 
