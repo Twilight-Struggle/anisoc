@@ -1,8 +1,10 @@
 # Builder stage
 FROM rust:1.57.0 AS builder
+RUN rustup component add rustfmt
 
 WORKDIR /app
 COPY anicore anicore/
+COPY animalai.proto .
 COPY aniweb aniweb/
 WORKDIR aniweb
 RUN cargo build --release
