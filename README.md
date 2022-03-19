@@ -28,10 +28,25 @@ backend は zero2production を主に引用して作成する。追加で unit t
 課題となってくるのはインターフェースである。現在は Mutex<HashMap<Uuid, core::Board>>の形式で web アプリ側が保持しているが、これは 1 人専用である。
 ai 側との接続も含む必要がある。
 
+## 実行方法(ランダムAI)
+
+ビルドは次のコマンドで実行可能
+
+```sh
+$ docker build --tag anisoc --file Dockerfile .
+```
+
+起動は以下の通り。
+
+```sh
+$ docker run　--name anisoc_ins -p 8000:8000 anisoc
+```
+
 ## core - ai インターフェース
 
 backend と ai 両者に対して対等なインターフェースを持つ必要がある。
 
+# python深層学習との結合
 ## ai - python インターフェース
 
 python の AI が受け取る盤面や合法手はすべて自分は手前側のプレイヤーであるという前提が必要(手前側から 0 オリジンの盤面)。
@@ -46,16 +61,9 @@ python 側の返り値は int 化した合法手とする。
 
 ## core
 
-## 実行方法
+## docker-composeを利用してネットワーク
+同一のdocker-composeの同services内にdockerインスタンスの設定を書けば自動でネットワークが構成される。
+これを利用してgRPC用のネットワークも構成した。
+なおコメントアウトされているttyは、trueにするとdocker-composeで起動した後、`docker-compose exec サービス名 bash`でシェルに入れるようにコンテナを永続化させておくためのものである。
 
-ビルドは次のコマンドで実行可能
-
-```sh
-$ docker build --tag anisoc --file Dockerfile .
-```
-
-起動は以下の通り。
-
-```sh
-$ docker run　--name anisoc_ins -p 8000:8000 anisoc
-```
+linksでanisocがanipyに依存することを示し、portsで50051ポートを開放することでgRPCでの通信が可能になる(このとき指定するホスト側の対応するポートは何でもいい)。

@@ -58,7 +58,7 @@ pub struct Game {
 impl Game {
     pub fn setup() -> Self {
         let mut board = vec![vec![None; WIDTH as usize]; HEIGHT as usize];
-        let saru_kick = SARU_KICK.iter().copied().collect();
+        let saru_kick = SARU_KICK.to_vec();
         let saru_piece = PieceKind::Saru([-1, 1], saru_kick);
         let usagi_kick = vec![
             [1, 0],
@@ -313,22 +313,23 @@ impl Game {
                 } else if last_stop == HEIGHT {
                     return (true, Some(self.turn));
                 }
-                let mut tmp = None;
+                let mut tmp_from = None;
+                let mut tmp_ball = None;
                 std::mem::swap(
                     &mut self.board[act.to.0 as usize][act.to.1 as usize], // here None
-                    &mut tmp,                                              // here ball
-                );
-                std::mem::swap(
-                    &mut self.board[kick.0 as usize][kick.1 as usize], // here ball
-                    &mut tmp,                                          // here None
+                    &mut tmp_ball,                                         // here ball
                 );
                 std::mem::swap(
                     &mut self.board[act.from.0 as usize][act.from.1 as usize], // here None
-                    &mut tmp,                                                  // here piece
+                    &mut tmp_from,                                             // here piece
+                );
+                std::mem::swap(
+                    &mut self.board[kick.0 as usize][kick.1 as usize], // here ball
+                    &mut tmp_ball,                                     // here None
                 );
                 std::mem::swap(
                     &mut self.board[act.to.0 as usize][act.to.1 as usize], // here piece
-                    &mut tmp,                                              // here None
+                    &mut tmp_from,                                         // here None
                 );
             }
             None => {
@@ -347,14 +348,14 @@ impl Game {
         // 親猿にグレードアップ
         // turn変更
         if act.to.0 == HEIGHT - 1 {
-            if let PieceKind::Oyasaru(_, _) = self.board[act.to.0 as usize][act.to.1 as usize]
+            if let PieceKind::Saru(_, _) = self.board[act.to.0 as usize][act.to.1 as usize]
                 .as_ref()
                 .unwrap()
                 .piecekind
             {
                 self.board[act.to.0 as usize][act.to.1 as usize] = Some(Piece {
                     player: self.turn,
-                    piecekind: PieceKind::Oyasaru([-2, 2], SARU_KICK.iter().copied().collect()),
+                    piecekind: PieceKind::Oyasaru([-2, 2], SARU_KICK.to_vec()),
                 });
             }
         }
@@ -375,13 +376,12 @@ impl Game {
         loop {
             let mut winner: Option<Player>;
             loop {
-                let action: Option<Act>;
                 // tracing::debug!("legal moves: {:?}", game_ins.legal_moves());
-                if game_ins.legal_moves().is_empty() {
-                    action = None;
+                let action = if game_ins.legal_moves().is_empty() {
+                    None
                 } else {
-                    action = Some(now_player.1.action(&game_ins));
-                }
+                    Some(now_player.1.action(&game_ins))
+                };
                 tracing::debug!("the move is {:?}", action);
                 let (success, winnertmp) = game_ins.action_parse(action);
                 winner = winnertmp;

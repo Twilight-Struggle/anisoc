@@ -7,6 +7,8 @@ services:
     restart: always
     ports:
       - 8000:8000
+    links:
+      - anipy
   
   anipy:
     build: ./anipy
@@ -14,5 +16,7 @@ services:
     container_name: anipy_ins
     # tty: true
     restart: always
+    ports:
+      - 50051:50051
     volumes:
       - ./anipy/model:/workspace/model

@@ -65,7 +65,7 @@ fn num_legalmoves_from_act(acts: &[Act]) -> Vec<u64> {
 }
 
 fn act_from_num(action_num: u64, acts: &[Act]) -> Act {
-    let from_num = action_num / 288 / 18;
+    let from_num = action_num / 288;
     let to_num = (action_num % 288) / 18;
     let kickto_num = (action_num % 288) % 18;
 
@@ -94,15 +94,16 @@ impl Agent for AIgRPC {
         let legalmoves = game.legal_moves();
         let cells = into_1darray(game.board_to_tensor());
         let legal_moves = num_legalmoves_from_act(&legalmoves);
-
+        // tracing::info!("legal_moves: {:?}", &legal_moves);
         let rt = tokio::runtime::Runtime::new().unwrap();
         let response = rt.block_on(async move {
-            let mut client = AiPlayerClient::connect("http://[::1]:50051").await.unwrap();
+            let mut client = AiPlayerClient::connect("http://anipy:50051").await.unwrap();
             let request = tonic::Request::new(BoardReq { cells, legal_moves });
             client.think_action(request).await.unwrap()
         });
 
         let action_num = response.into_inner().action;
+        // tracing::info!("action_num: {:?}", &action_num);
         act_from_num(action_num, &legalmoves)
     }
 }

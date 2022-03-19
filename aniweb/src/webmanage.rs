@@ -2,7 +2,8 @@ use crate::aigame::{AiGame, Status};
 use actix_files::NamedFile;
 use actix_web::dev::Server;
 use actix_web::{get, post, web, App, HttpResponse, HttpServer};
-use anicore::randai::Randai;
+use anicore::aigrpc::AIgRPC;
+// use anicore::randai::Randai;
 use anicore::{Act, Agent};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -37,9 +38,9 @@ struct MakeResult {
     )
 )]
 #[post("/make")]
-async fn make(data: web::Data<GameManeger<Randai>>) -> HttpResponse {
+async fn make(data: web::Data<GameManeger<AIgRPC>>) -> HttpResponse {
     let mut games = data.games.lock().unwrap();
-    let opponent = Randai {};
+    let opponent = AIgRPC {};
     let new_id = Uuid::new_v4();
     let aigame = AiGame::setup(opponent);
     games.insert(new_id, aigame.clone());
@@ -61,11 +62,11 @@ struct Resetcmd {
     )
 )]
 #[post("/reset")]
-async fn reset(cmd: web::Json<Resetcmd>, data: web::Data<GameManeger<Randai>>) -> HttpResponse {
+async fn reset(cmd: web::Json<Resetcmd>, data: web::Data<GameManeger<AIgRPC>>) -> HttpResponse {
     let mut games = data.games.lock().unwrap();
     match games.get(&cmd.id) {
         Some(_) => {
-            let opponent = Randai {};
+            let opponent = AIgRPC {};
             let aigame = AiGame::setup(opponent);
             let board = aigame.board();
             games.insert(cmd.id, aigame);
@@ -91,7 +92,7 @@ struct Movcmd {
     )
 )]
 #[post("/mov")]
-async fn mov(cmd: web::Json<Movcmd>, data: web::Data<GameManeger<Randai>>) -> HttpResponse {
+async fn mov(cmd: web::Json<Movcmd>, data: web::Data<GameManeger<AIgRPC>>) -> HttpResponse {
     let mut games = data.games.lock().unwrap();
     match games.get_mut(&cmd.id) {
         Some(aigame) => {
@@ -113,7 +114,7 @@ async fn mov(cmd: web::Json<Movcmd>, data: web::Data<GameManeger<Randai>>) -> Ht
 }
 
 pub fn run(listener: TcpListener) -> Result<Server, std::io::Error> {
-    let gamemaneger = web::Data::new(GameManeger::<Randai> {
+    let gamemaneger = web::Data::new(GameManeger::<AIgRPC> {
         games: Mutex::new(HashMap::new()),
     });
     let server = HttpServer::new(move || {
@@ -145,7 +146,7 @@ mod tests {
 
     #[actix_rt::test]
     async fn make_works() {
-        let gamemaneger = web::Data::new(GameManeger::<Randai> {
+        let gamemaneger = web::Data::new(GameManeger::<AIgRPC> {
             games: Mutex::new(HashMap::new()),
         });
         let mut app = test::init_service(
@@ -171,7 +172,7 @@ mod tests {
 
     #[actix_rt::test]
     async fn reset_works() {
-        let gamemaneger = web::Data::new(GameManeger::<Randai> {
+        let gamemaneger = web::Data::new(GameManeger::<AIgRPC> {
             games: Mutex::new(HashMap::new()),
         });
         let mut app = test::init_service(
@@ -209,7 +210,7 @@ mod tests {
 
     #[actix_rt::test]
     async fn reset_dont_works() {
-        let gamemaneger = web::Data::new(GameManeger::<Randai> {
+        let gamemaneger = web::Data::new(GameManeger::<AIgRPC> {
             games: Mutex::new(HashMap::new()),
         });
         let mut app = test::init_service(
@@ -245,7 +246,7 @@ mod tests {
     }
     #[actix_rt::test]
     async fn mov_works() {
-        let gamemaneger = web::Data::new(GameManeger::<Randai> {
+        let gamemaneger = web::Data::new(GameManeger::<AIgRPC> {
             games: Mutex::new(HashMap::new()),
         });
         let mut app = test::init_service(
@@ -290,7 +291,7 @@ mod tests {
 
     #[actix_rt::test]
     async fn mov_dont_works() {
-        let gamemaneger = web::Data::new(GameManeger::<Randai> {
+        let gamemaneger = web::Data::new(GameManeger::<AIgRPC> {
             games: Mutex::new(HashMap::new()),
         });
         let mut app = test::init_service(

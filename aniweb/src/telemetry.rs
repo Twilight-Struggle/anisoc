@@ -7,7 +7,7 @@ pub fn init_subscriber<Sink>(sink: Sink)
 where
     Sink: for<'a> MakeWriter<'a> + Send + Sync + 'static,
 {
-    let env_filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("Debug"));
+    let env_filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("INFO"));
     let format = tracing_subscriber::fmt::format().pretty();
     tracing_subscriber::fmt()
         .with_writer(sink)
