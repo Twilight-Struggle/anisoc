@@ -313,22 +313,23 @@ impl Game {
                 } else if last_stop == HEIGHT {
                     return (true, Some(self.turn));
                 }
-                let mut tmp = None;
+                let mut tmp_from = None;
+                let mut tmp_ball = None;
                 std::mem::swap(
                     &mut self.board[act.to.0 as usize][act.to.1 as usize], // here None
-                    &mut tmp,                                              // here ball
-                );
-                std::mem::swap(
-                    &mut self.board[kick.0 as usize][kick.1 as usize], // here ball
-                    &mut tmp,                                          // here None
+                    &mut tmp_ball,                                         // here ball
                 );
                 std::mem::swap(
                     &mut self.board[act.from.0 as usize][act.from.1 as usize], // here None
-                    &mut tmp,                                                  // here piece
+                    &mut tmp_from,                                             // here piece
+                );
+                std::mem::swap(
+                    &mut self.board[kick.0 as usize][kick.1 as usize], // here ball
+                    &mut tmp_ball,                                     // here None
                 );
                 std::mem::swap(
                     &mut self.board[act.to.0 as usize][act.to.1 as usize], // here piece
-                    &mut tmp,                                              // here None
+                    &mut tmp_from,                                         // here None
                 );
             }
             None => {
@@ -347,7 +348,7 @@ impl Game {
         // 親猿にグレードアップ
         // turn変更
         if act.to.0 == HEIGHT - 1 {
-            if let PieceKind::Oyasaru(_, _) = self.board[act.to.0 as usize][act.to.1 as usize]
+            if let PieceKind::Saru(_, _) = self.board[act.to.0 as usize][act.to.1 as usize]
                 .as_ref()
                 .unwrap()
                 .piecekind
