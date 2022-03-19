@@ -43,13 +43,12 @@ impl<T: Agent> AiGame<T> {
         if self.game_end {
             return (Status::GameEnd("Game End".to_string()), vec![vec![]]);
         }
-        let action: Option<Act>;
         // tracing::debug!("legal moves: {:?}", game_ins.legal_moves());
-        if self.game_ins.legal_moves().is_empty() {
-            action = None;
+        let action = if self.game_ins.legal_moves().is_empty() {
+            None
         } else {
-            action = Some(action_in);
-        }
+            Some(action_in)
+        };
         let (success, winner) = self.game_ins.action_parse(action);
         if !success {
             return (
@@ -72,12 +71,11 @@ impl<T: Agent> AiGame<T> {
             }
         }
         // こっからAI_agent
-        let action: Option<Act>;
-        if self.game_ins.legal_moves().is_empty() {
-            action = None;
+        let action = if self.game_ins.legal_moves().is_empty() {
+            None
         } else {
-            action = Some(self.ai_agent.action(&self.game_ins));
-        }
+            Some(self.ai_agent.action(&self.game_ins))
+        };
         let (_, winner) = self.game_ins.action_parse(action); //　絶対成功
         if let Some(player) = winner {
             self.game_end = true;
