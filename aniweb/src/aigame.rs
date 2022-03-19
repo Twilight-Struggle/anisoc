@@ -41,7 +41,10 @@ impl<T: Agent> AiGame<T> {
     }
     pub fn action(&mut self, action_in: Act) -> (Status, Vec<Vec<Option<String>>>) {
         if self.game_end {
-            return (Status::GameEnd("Game End".to_string()), vec![vec![]]);
+            return (
+                Status::GameEnd("Game End".to_string()),
+                self.game_ins.board_to_string(),
+            );
         }
         // tracing::debug!("legal moves: {:?}", game_ins.legal_moves());
         let action = if self.game_ins.legal_moves().is_empty() {
@@ -76,6 +79,7 @@ impl<T: Agent> AiGame<T> {
         } else {
             Some(self.ai_agent.action(&self.game_ins))
         };
+        // tracing::info!("action: {:?}", action);
         let (_, winner) = self.game_ins.action_parse(action); //　絶対成功
         if let Some(player) = winner {
             self.game_end = true;
