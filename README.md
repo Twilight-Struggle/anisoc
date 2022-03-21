@@ -119,7 +119,7 @@ https://cloud.google.com/artifact-registry/docs/docker/store-docker-container-im
 1. Cloud Run Admin API を有効にします。
 1. Artifact Registry API を有効にします。
 1. デフォルト プロジェクトを設定します。`$ gcloud config set project PROJECT_ID`
-1. 選択したリージョン向けに gcloud を構成します。`$ gcloud config set run/region REGION`
+1. 選択したリージョン向けに gcloud を構成します。`$ gcloud config set run/region asia-northeast1`
 
 ### Dockerリポジトリ作成
 1. https://cloud.google.com/artifact-registry/docs/docker/store-docker-container-images?hl=ja#create
