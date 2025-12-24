@@ -6,6 +6,29 @@ anisoc_back - anisoc_core - anisoc_ai の間は共通のインターフェース
 anisoc_ai は python との接続を橋渡しするだけの機能になるのが良いだろう。
 またボードゲームのルールは anisoc_core ですべて管理する。
 
+```mermaid
+flowchart LR
+  subgraph Frontend["anifront (React)"]
+    UI["Game UI"]
+  end
+
+  subgraph Backend["aniweb (Actix-web)"]
+    API["REST/JSON endpoints make / reset / mov"]
+    Core["Board logic via anicore Act(from,to,kickto)"]
+  end
+
+  subgraph AI["anipy (Python gRPC)"]
+    Grpc["AiPlayer gRPC server ThinkAction(BoardReq)"]
+  end
+
+  UI -->|"JSON POST make/reset/mov"| API
+  API --> Core
+  Core -->|"board state & legal moves"| API
+  API -->|"BoardReq: cells + legal_moves"| Grpc
+  Grpc -->|"ActionRep: action"| API
+  API -->|"updated board/responses"| UI
+```
+
 ## front
 
 必要なコンポーネントは「ゲーム開始/リセット」、「5 x 3 のボード」、「移動実行」、「移動キャンセル」ボタンと、
